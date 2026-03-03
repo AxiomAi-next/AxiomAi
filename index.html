@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AxiomAi</title>
+  <style>
+    /* ===== Global ===== */
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
+    body{background:#121212;color:#e0e0e0;display:flex;flex-direction:column;min-height:100vh;}
+    a{text-decoration:none;color:inherit;}
+
+    /* ===== Header ===== */
+    header{display:flex;justify-content:center;align-items:center;padding:1rem 0;background:#1a1a1a;box-shadow:0 2px 4px rgba(0,0,0,0.5);}
+    .logo{font-size:2rem;font-weight:bold;background:linear-gradient(90deg,#fff,#000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+    /* ===== Chat Container ===== */
+    .chat-container{flex:1;display:flex;flex-direction:column;padding:1rem;overflow-y:auto;gap:0.5rem;}
+    .message{max-width:75%;padding:.8rem 1rem;border-radius:12px;word-wrap:break-word;line-height:1.4;}
+    .user{background:#333;align-self:flex-end;border-top-right-radius:0;}
+    .ai{background:#1e88e5;color:#fff;align-self:flex-start;border-top-left-radius:0;}
+
+    /* ===== Input Section ===== */
+    .input-container{display:flex;padding:.5rem 1rem;background:#1a1a1a;border-top:1px solid #333;}
+    .input-container input{flex:1;padding:.7rem 1rem;border-radius:25px;border:none;background:#2c2c2c;color:#fff;outline:none;font-size:1rem;}
+    .input-container button{margin-left:.5rem;padding:.7rem 1.2rem;border-radius:25px;border:none;background:#1e88e5;color:#fff;cursor:pointer;font-size:1rem;transition:background .2s;}
+    .input-container button:hover{background:#1565c0;}
+
+    /* ===== Scrollbar ===== */
+    .chat-container::-webkit-scrollbar{width:6px;}
+    .chat-container::-webkit-scrollbar-thumb{background:#555;border-radius:3px;}
+
+    /* ===== Responsive ===== */
+    @media(max-width:600px){.message{max-width:90%;}}
+  </style>
+</head>
+<body>
+
+<header><div class="logo">Axiom</div></header>
+
+<div class="chat-container" id="chat-container"></div>
+
+<div class="input-container">
+  <input type="text" id="user-input" placeholder="Type your message...">
+  <button id="send-btn">Send</button>
+</div>
+
+<script>
+  const chatContainer=document.getElementById('chat-container');
+  const userInput=document.getElementById('user-input');
+  const sendBtn=document.getElementById('send-btn');
+
+  // Add a message to chat
+  function addMessage(text,sender){
+    const msg=document.createElement('div');
+    msg.classList.add('message',sender);
+    msg.innerText=text;
+    chatContainer.appendChild(msg);
+    chatContainer.scrollTop=chatContainer.scrollHeight;
+  }
+
+  // API key (⚠️ only for local testing!)
+  const OPENAI_API_KEY="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";
+
+  // Call OpenAI ChatGPT API
+  async function getAIReply(userText){
+    try{
+      const res=await fetch("https://api.openai.com/v1/chat/completions",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":"Bearer "+OPENAI_API_KEY
+        },
+        body:JSON.stringify({
+          model:"gpt-3.5-turbo",
+          messages:[{role:"user",content:userText}],
+          max_tokens:500
+        })
+      });
+      const data=await res.json();
+      return data.choices[0].message.content;
+    }catch(err){
+      console.error(err);
+      return "Error contacting AI.";
+    }
+  }
+
+  // Send button click
+  sendBtn.addEventListener("click",async ()=>{
+    const text=userInput.value.trim();
+    if(!text) return;
+    addMessage(text,"user");
+    userInput.value="";
+
+    // Typing indicator
+    const typingMsg=document.createElement("div");
+    typingMsg.classList.add("message","ai");
+    typingMsg.innerText="AxiomAi is typing...";
+    chatContainer.appendChild(typingMsg);
+    chatContainer.scrollTop=chatContainer.scrollHeight;
+
+    const reply=await getAIReply(text);
+    typingMsg.innerText=reply;
+    chatContainer.scrollTop=chatContainer.scrollHeight;
+  });
+
+  // Enter key
+  userInput.addEventListener("keypress",(e)=>{
+    if(e.key==="Enter") sendBtn.click();
+  });
+</script>
+
+</body>
+</html>
